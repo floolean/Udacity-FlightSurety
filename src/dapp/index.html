@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>FlightSurety</title>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
@@ -20,12 +21,68 @@
     </nav>
 
     <main class="container">
+			<div class="row">
+				<div class="col-6">
+					<p>Contract operational: <span id="operationalStatus" style="font-weight: bold; color: greenyellow;">..</span></p>
+				</div>
+				<div class="col-6">
+					<p style="text-align: right;">[<span id="addressDisplay"></span>]Balance: <span id="balanceDisplay" style="font-weight: bold; color: greenyellow;">..</span></p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-12 col-sm-12 col-md-12 col-lg-5 top-20">
+					<h5>Flights</h5>
+					<table id="flights" cellpadding="3" cellspacing="1">
+						<thead>
+							<th>Airline</th>
+							<th>Flight</th>
+							<th>Time</th>
+							<th>Status</th>
+						</thead>
+					</table>
+				</div>
+				<div class="col-12 col-sm-12 col-md-12 col-lg-7 top-20">
+					
+					<div class="row" id="flightDetails">
+						<p><i>No flight selected</i></p>
+						
+							<!--<label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>-->
+					</div>
+					<div id="insurancePanel" style="width: 100%;">
+						<h4 style="text-align: center;">Flight Insurance</h4>
+						<div class="row">
+							<div class="col-2"><h5 id="airline"></h5></div>
+							<div class="col-2"><h5 id="number"></h5></div>
+							<div class="col-2"><h5 id="timestamp"></h5></div>
+							<div class="col-3"><h5 id="status"></h5></div>
+							<div class="col-3"><button id="requestOracleUpdate" class="btn btn-warning" style="width: 100%;">UPDATE</button</div>
+						</div>
+						<div id="insuranceInstruments" class="top-20" style="width: 100%;">
+							<div style="width:20%; display: inline-block;">
+								<button id="minInsurance" class="btn btn-secondary" style="width: 100%;">MIN</button>
+							</div>
+							<div style="width:55%; display: inline-block;">
+								<input id="insuranceSlider" type="range"  style="width: 100%;" value="5000000000000000
+								" step="1" min="1" max="10000000000000000" value="1"/>
+							</div>
+							<div style="width:20%; display: inline-block;">
+								<button id="maxInsurance" class="btn btn-secondary" style="width: 100%;">MAX</button>
+							</div>
+							<div class="top-20" style="display: block;">
+								<h4 id="insuranceValue" style="text-align: center; display: block;">...</h4>
+							</div>
+							<h4 id="insuranceDisplay" class="hidden top-20"></h4>
+							<button id="buyInsuranceButton" class="btn btn-primary hidden" style="width: 100%;">BUY INSURANCE</button>
+							<button id="requestWithdrawalButton" class="btn btn-primary hidden" style="width: 100%;">REQUEST WITHDRAWAL</button>
+							<button id="withdrawInsuranceButton" class="btn btn-success hidden" style="width: 100%;">WITHDRAW INSURANCE</button>
+						</div>
+						
+					</div>
 
-        <div id="display-wrapper" class="top-20">
-        </div>
-        <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
-        </div>
+				</div>
+
+			</div>
+        
     </main>
 
 </body>

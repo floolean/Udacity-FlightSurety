@@ -15,14 +15,37 @@ export default class DOM {
     static p = (...args) => DOM.makeElement(`p`, ...args);
     static span = (...args) => DOM.makeElement(`span`, ...args);
     static img = (...args) => DOM.makeElement(`img`, ...args);
+    static tr = (...args) => DOM.makeElement(`tr`, ...args);
     static td = (...args) => DOM.makeElement(`td`, ...args);
+    static ul = (...args) => DOM.makeElement(`ul`, ...args);
+    static li = (...args) => DOM.makeElement(`li`, ...args);
     static attributeExceptions = [
       `role`,
     ];
     
     static elid(id) { 
-      return document.getElementById(id);
+      let el = document.getElementById(id);
+			if (el){
+				el.show = () =>{
+					if (el.classList.contains('hidden')) el.classList.remove('hidden');
+				}
+				el.hide = () => {
+					if (!el.classList.contains('hidden')) el.classList.add('hidden');
+				}
+			}
+			return el;
     }
+
+		static elcl(cls) { 
+			let elements = document.getElementsByClassName(cls);
+      return elements.length ? elements[0] : null;
+    }
+
+		static clear(el){
+			el = (el instanceof window.Element) ? el : DOM.elid(el);
+			if (el instanceof window.Element)
+				el.textContent = '';
+		}
   
     static appendText(el, text) {
       const textNode = document.createTextNode(text);
@@ -57,6 +80,7 @@ export default class DOM {
     }
     
     static makeElement(type, textOrPropsOrChild, ...otherChildren) {
+			const validAttributes = ['href','id','src','title','alt'];
       const el = document.createElement(type);
     
       if (Array.isArray(textOrPropsOrChild)) {
@@ -67,7 +91,7 @@ export default class DOM {
         DOM.appendText(el, textOrPropsOrChild);
       } else if (typeof textOrPropsOrChild === `object`) {
         Object.keys(textOrPropsOrChild).forEach((propName) => {
-          if (propName in el || attributeExceptions.includes(propName)) {
+          if (propName in el || validAttributes.includes(propName)) {
             const value = textOrPropsOrChild[propName];
     
             if (propName === `style`) {

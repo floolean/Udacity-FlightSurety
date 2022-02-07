@@ -1,56 +1,95 @@
-import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
-import Config from './config.json';
-import Web3 from 'web3';
+import FlightSuretyApp from "../../build/contracts/FlightSuretyApp.json";
+import FlightSuretyData from "../../build/contracts/FlightSuretyData.json";
+import Config from "./config.json";
+import Web3 from "web3/dist/web3.min";
+
+const gasLimit = 8000000;
 
 export default class Contract {
-    constructor(network, callback) {
+	constructor(network, callback) {
+		this.config = Config[network];
+		this.web3 = new Web3(new Web3.providers.WebsocketProvider(this.config.providerWebsocketUrl));
+		this.flightSuretyApp = new this.web3.eth.Contract(
+			FlightSuretyApp.abi,
+			this.config.appAddress
+		);
+		this.flightSuretyData = new this.web3.eth.Contract(
+			FlightSuretyData.abi,
+			this.config.dataAddress
+		);
+		this.initialize(callback);
+		this.owner = null;
+		this.passenger = null;
+	}
 
-        let config = Config[network];
-        this.web3 = new Web3(new Web3.providers.HttpProvider(config.url));
-        this.flightSuretyApp = new this.web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
-        this.initialize(callback);
-        this.owner = null;
-        this.airlines = [];
-        this.passengers = [];
-    }
+	initialize(callback) {
+		this.web3.eth.getAccounts((error, accts) => {
+			this.owner = accts[0];
+			this.passenger = accts[10];
+			callback();
+		});
+	}
 
-    initialize(callback) {
-        this.web3.eth.getAccounts((error, accts) => {
-           
-            this.owner = accts[0];
+	isOperational(callback) {
+		let self = this;
+		self.flightSuretyApp.methods
+			.isOperational()
+			.call({ from: self.owner }, callback);
+	}
 
-            let counter = 1;
-            
-            while(this.airlines.length < 5) {
-                this.airlines.push(accts[counter++]);
-            }
+	listenFor(event, callback) {
+		let ev = this.flightSuretyApp.events[event];
+		if (ev) {
+			ev().on("data", callback);
+		}
+	}
 
-            while(this.passengers.length < 5) {
-                this.passengers.push(accts[counter++]);
-            }
+	getBalance(account) {
+		return this.web3.eth.getBalance(account);
+	}
 
-            callback();
-        });
-    }
+	async getFlight(flightKey) {
+		let flight = await this.flightSuretyData.methods
+			.getFlight(flightKey)
+			.call({ from: this.passenger });
+		return flight;
+	}
 
-    isOperational(callback) {
-       let self = this;
-       self.flightSuretyApp.methods
-            .isOperational()
-            .call({ from: self.owner}, callback);
-    }
+	async getInsurance(flightKey) {
+		let insuranceKey = await this.flightSuretyApp.methods
+			.getInsuranceKey(flightKey)
+			.call({ from: this.passenger });
+		let insurance = await this.flightSuretyData.methods
+			.getInsurance(insuranceKey)
+			.call({ from: this.passenger });
+		return insurance;
+	}
 
-    fetchFlightStatus(flight, callback) {
-        let self = this;
-        let payload = {
-            airline: self.airlines[0],
-            flight: flight,
-            timestamp: Math.floor(Date.now() / 1000)
-        } 
-        self.flightSuretyApp.methods
-            .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.owner}, (error, result) => {
-                callback(error, payload);
-            });
-    }
+	async buyInsurance(flight, value) {
+		let receipt = await this.flightSuretyApp.methods
+			.buyInsurance(flight.airline, flight.number, flight.unixTimestamp)
+			.send({ from: this.passenger, value: value, gasLimit: gasLimit });
+		return receipt;
+	}
+
+	async requestInsuranceWithdrawal(flight) {
+		let receipt = await this.flightSuretyApp.methods
+			.requestInsuranceWithdrawal(flight.airline, flight.number, flight.unixTimestamp)
+			.send({ from: this.passenger, gasLimit: gasLimit });
+		return receipt;
+	}
+
+	async withdrawInsurance(flight) {
+		let receipt = await this.flightSuretyApp.methods
+			.withdrawInsurance(flight.airline, flight.number, flight.unixTimestamp)
+			.send({ from: this.passenger, gasLimit: gasLimit });
+		return receipt;
+	}
+
+	async fetchFlightStatus(flight) {
+		let self = this;
+		return await self.flightSuretyApp.methods
+			.fetchFlightStatus(flight.airline, flight.number, flight.unixTimestamp)
+			.send({ from: self.owner, gasLimit: gasLimit });
+	}
 }

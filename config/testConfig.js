@@ -2,6 +2,7 @@
 var FlightSuretyApp = artifacts.require("FlightSuretyApp");
 var FlightSuretyData = artifacts.require("FlightSuretyData");
 var BigNumber = require('bignumber.js');
+var moment = require('moment');
 
 var Config = async function(accounts) {
     
@@ -24,11 +25,22 @@ var Config = async function(accounts) {
     let firstAirline = accounts[1];
 
     let flightSuretyData = await FlightSuretyData.new();
-    let flightSuretyApp = await FlightSuretyApp.new();
+    let flightSuretyApp = await FlightSuretyApp.new(flightSuretyData.address);
 
-    
-    return {
+		let flights = [{
+			number: "TF00",
+			airline: accounts[5],
+			timestamp: moment().unix()
+		},
+		{
+			number: "TF01",
+			airline: accounts[5],
+			timestamp: moment().unix()
+		}];
+
+    return { 
         owner: owner,
+				flights: flights,
         firstAirline: firstAirline,
         weiMultiple: (new BigNumber(10)).pow(18),
         testAddresses: testAddresses,

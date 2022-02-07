@@ -1,3 +1,7 @@
+html, body {
+	min-height: 100%;
+}
+
 body {
     background-image: url('flight.jpg'); /* Source: iStockPhoto */
     background-repeat: no-repeat;
@@ -6,8 +10,7 @@ body {
 
 .container {
     margin-top: 400px;
-    background-color: #000;
-    opacity: 0.9;
+    background-color: #000000e0;
     color: #fff;
     padding: 40px;
 }
@@ -38,5 +41,33 @@ label.form {
     margin-right: 20px;
 }
 input {
-    margin-right: 30px;
+    
+}
+
+.row {
+	margin: 0px !important;
+}
+
+.hidden {
+	display: none;
+}
+
+#insurancePanel {
+	padding: 10px;
+	boarder-radius: 2px;
+	background-color: gray;
+}
+
+#insurancePanel h4, h5 {
+	color: white;
+	text-align: center;
+}
+
+#insuranceDisplay {
+	color: white;
+	text-align: center;
+	background-color: rgb(0, 124, 62);
+	padding: 32px;
+	border-radius: 2px;
+	border: 2px solid rgb(0, 78, 39);
 }

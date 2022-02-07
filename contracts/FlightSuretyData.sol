@@ -1,186 +1,179 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.11;
+pragma experimental ABIEncoderV2;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./FlightSuretyModel.sol";
 
 contract FlightSuretyData {
-    using SafeMath for uint256;
 
-    /********************************************************************************************/
-    /*                                       DATA VARIABLES                                     */
-    /********************************************************************************************/
-
-    address private contractOwner;                                      // Account used to deploy contract
-    bool private operational = true;                                    // Blocks all state changes throughout the contract if false
-
-    /********************************************************************************************/
-    /*                                       EVENT DEFINITIONS                                  */
-    /********************************************************************************************/
+	mapping(bytes32 => Model.Flight)  private flights;
+	mapping(address => Model.Airline) private airlines;
+	mapping(address => Model.Oracle) private oracles;
+	mapping(bytes32 => Model.Insurance) insurances;
+	address[] private oracleAddresses;
+	address[] private airlineAddresses;
+	address private contractOwner;                                      // Account used to deploy contract
+	address private contractOwnerApp;                                   // Address of Owner App Contract
+	bool private operational = false;
 
 
-    /**
-    * @dev Constructor
-    *      The deploying account becomes contractOwner
-    */
-    constructor
-                                (
-                                ) 
-                                public 
-    {
-        contractOwner = msg.sender;
-    }
+	constructor () 
+	{
+			contractOwner = msg.sender;
+	}
 
-    /********************************************************************************************/
-    /*                                       FUNCTION MODIFIERS                                 */
-    /********************************************************************************************/
+	modifier requireOperational() 
+	{
+			require(operational, "Contract is currently not operational");
+			_;
+	}
 
-    // Modifiers help avoid duplication of code. They are typically used to validate something
-    // before a function is allowed to be executed.
+	modifier requireContractOwner()
+	{
+		require(msg.sender == contractOwner, "Caller is not contract owner");
+		_;
+	}
 
-    /**
-    * @dev Modifier that requires the "operational" boolean variable to be "true"
-    *      This is used on all state changing functions to pause the contract in 
-    *      the event there is an issue that needs to be fixed
-    */
-    modifier requireIsOperational() 
-    {
-        require(operational, "Contract is currently not operational");
-        _;  // All modifiers require an "_" which indicates where the function body will be added
-    }
+	modifier requireContractOwnerApp()
+	{
+		require(msg.sender == contractOwnerApp, "Caller is not contract owner app");
+		_;
+	}
 
-    /**
-    * @dev Modifier that requires the "ContractOwner" account to be the function caller
-    */
-    modifier requireContractOwner()
-    {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
-        _;
-    }
+	modifier requireContractOwnerOrApp()
+	{
+		require(msg.sender == contractOwnerApp || msg.sender == contractOwner, "Caller is neither contract owner or contract owner app");
+		_;
+	}
+	
+	function isOperational() public view returns(bool) 
+	{
+		return operational;
+	}
 
-    /********************************************************************************************/
-    /*                                       UTILITY FUNCTIONS                                  */
-    /********************************************************************************************/
+	function setContractOwner(address newOwner) public
+	{
+		require(msg.sender == contractOwner, "Contract owner can only be changed by current owner");
+		require(newOwner != address(0), "New owner needs to be a valid address");
+		contractOwner = newOwner;
+	}
 
-    /**
-    * @dev Get operating status of contract
-    *
-    * @return A bool that is the current operating status
-    */      
-    function isOperational() 
-                            public 
-                            view 
-                            returns(bool) 
-    {
-        return operational;
-    }
+	function isContractOwner(address sender) external view returns (bool)
+	{
+		return sender == contractOwner;
+	}
 
+	function setContractOwnerApp(address newOwnerApp) external
+	{
+		require(msg.sender == contractOwner || msg.sender == contractOwnerApp, "Only contract owner or app owner");
+		require(newOwnerApp != address(0), "New owner needs to be a valid address");
+		contractOwnerApp = newOwnerApp;
+	}
 
-    /**
-    * @dev Sets contract operations on/off
-    *
-    * When operational mode is disabled, all write transactions except for this one will fail
-    */    
-    function setOperatingStatus
-                            (
-                                bool mode
-                            ) 
-                            external
-                            requireContractOwner 
-    {
-        operational = mode;
-    }
+	function isContractOwnerApp(address sender) external view returns (bool)
+	{
+		return sender == contractOwnerApp;
+	}
 
-    /********************************************************************************************/
-    /*                                     SMART CONTRACT FUNCTIONS                             */
-    /********************************************************************************************/
+	function setOperatingStatus (bool mode) external
+	requireContractOwnerOrApp
+	{
+			operational = mode;
+	}
 
-   /**
-    * @dev Add an airline to the registration queue
-    *      Can only be called from FlightSuretyApp contract
-    *
-    */   
-    function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-    {
-    }
+	function isAirline(address airline) external view
+	returns(bool) {
+		return airlines[airline].registered;
+	}
 
+	function setAirline(address airlineAddress, Model.Airline memory airline) external 
+	requireContractOwnerApp
+	{
+		airlines[airlineAddress] = airline;
+		if (airline.registered == false)
+			return;
+		bool found = false;
+		for (uint i = 0; i < airlineAddresses.length; ++i)
+		{
+			if (airlineAddresses[i] == airlineAddress)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found == false)
+		{
+			airlineAddresses.push(airlineAddress);
+		}
+	}
 
-   /**
-    * @dev Buy insurance for a flight
-    *
-    */   
-    function buy
-                            (                             
-                            )
-                            external
-                            payable
-    {
+	function getAirline(address airlineAddress) external view
+	requireContractOwnerOrApp
+	returns(Model.Airline memory airline) 
+	{
+		airline = airlines[airlineAddress];
+	}
 
-    }
+	function getAirlines(uint page) external view
+	returns(Model.Airline[10] memory output) 
+	{
+		uint limit = 10;
+		uint start = page * limit;
+		for (uint i = 0; i < limit; ++i) 
+		{
+			uint index = start + i;
+			Model.Airline memory airline = airlines[airlineAddresses[index]];
+			output[i] = airline;
+		}
+	}
 
-    /**
-     *  @dev Credits payouts to insurees
-    */
-    function creditInsurees
-                                (
-                                )
-                                external
-                                pure
-    {
-    }
-    
+	function getAirlineCount() external view
+	returns(uint) 
+	{
+		return airlineAddresses.length;
+	}
 
-    /**
-     *  @dev Transfers eligible payout funds to insuree
-     *
-    */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
-    }
+	function getFlight(bytes32 flightKey) external view
+	requireOperational
+	returns(Model.Flight memory flight)
+	{
+		flight = flights[flightKey];
+	}
 
-   /**
-    * @dev Initial funding for the insurance. Unless there are too many delayed flights
-    *      resulting in insurance payouts, the contract should be self-sustaining
-    *
-    */   
-    function fund
-                            (   
-                            )
-                            public
-                            payable
-    {
-    }
+	function setFlight(bytes32 flightKey, Model.Flight calldata flight) external
+	requireOperational
+	requireContractOwnerApp
+	{
+		flights[flightKey] = flight;
+	}
 
-    function getFlightKey
-                        (
-                            address airline,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32) 
-    {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
-    }
+	function getOracle(address oracleAddress) external view
+	requireOperational
+	returns(Model.Oracle memory oracle)
+	{
+		oracle = oracles[oracleAddress];
+	}
 
-    /**
-    * @dev Fallback function for funding smart contract.
-    *
-    */
-    function() 
-                            external 
-                            payable 
-    {
-        fund();
-    }
+	function setOracle(address oracleAddress, Model.Oracle calldata oracle) external
+	requireOperational
+	requireContractOwnerApp
+	{
+		oracles[oracleAddress] = oracle;
+	}
 
+	function getInsurance(bytes32 key) external view
+	requireOperational
+	returns(Model.Insurance memory insurance)
+	{
+		insurance = insurances[key];
+	}
+
+	function setInsurance(bytes32 key, Model.Insurance memory insurance) external
+	requireOperational
+	requireContractOwnerApp
+	{
+		insurances[key] = insurance;
+	}
 
 }
 

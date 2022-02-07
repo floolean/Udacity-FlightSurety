@@ -1,0 +1,50 @@
+{
+	// Verwendet IntelliSense zum Ermitteln möglicher Attribute.
+	// Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
+	// Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "DApp (Chrome)",
+			"request": "launch",
+			"type": "chrome",
+			"url": "http://localhost:8000",
+			"webRoot": "${workspaceFolder}/src/dapp",
+			"sourceMaps": true
+		},
+		{
+			"type": "solidity",
+			"request": "launch",
+			"name": "Debug Solidity"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "flightSurety truffle test (debugable)",
+			"cwd": "${workspaceFolder}",
+			"program": "${workspaceRoot}/node_modules/truffle/build/cli.bundled.js",
+			"args": [
+					"test",
+					"--network",
+					"test",
+					"./test/flightSurety.js"
+			]
+		},
+		{
+			"type": "node",
+			"request": "attach",
+			"name": "Server (nodemon)",
+			"processId": "${command:PickProcess}",
+			"restart": true,
+			"protocol": "inspector"
+		},
+		{
+			"type": "node",
+			"request": "attach",
+			"name": "DApp (webpack)",
+			"processId": "${command:PickProcess}",
+			"restart": false,
+			"protocol": "inspector"
+		}
+	]
+}
